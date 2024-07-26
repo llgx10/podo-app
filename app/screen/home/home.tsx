@@ -1,10 +1,31 @@
-import React from 'react';
-import { StyleSheet, View, Text, Dimensions, Image } from 'react-native';
+import { useRouter } from "expo-router";
+import React, { useRef } from 'react';
+import { StyleSheet, View, Text, Dimensions, Image, ScrollView, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const { width, height } = Dimensions.get('window');
 
+// Define an array of colors
+const rectangleColors = [
+  '#FFDDC1', // Light Peach
+  '#FFABAB', // Light Coral
+  '#FFC3A0', // Light Pink
+  '#D5AAFF', // Light Purple
+  '#B9FBC0', // Light Green
+  '#A0E6FF', // Light Blue
+];
+
 export default function HomeScreen() {
+  // Create animated value
+  const scrollY = useRef(new Animated.Value(0)).current;
+
+  // Interpolate the scroll value to control the white rectangle's position
+  const whiteRectangleTranslateY = scrollY.interpolate({
+    inputRange: [0, height * 0.45],
+    outputRange: [0, height * 0.45 * 0.1], // Limit the upward movement (10% of the rectangle height)
+    extrapolate: 'clamp',
+  });
+
   return (
     <View style={styles.container}>
       <LinearGradient
@@ -17,7 +38,7 @@ export default function HomeScreen() {
         <Text style={styles.weatherText}>Sunny</Text>
         <View style={styles.temperatureWrapper}>
           <Image
-            source={require('../../assets/images/weather_icon/sunny.png')}
+            source={require('../../../assets/images/weather_icon/sunny.png')}
             style={styles.icon}
           />
           <View style={styles.temperatureDetails}>
@@ -40,30 +61,52 @@ export default function HomeScreen() {
               <Text style={styles.cellValue}>6:32</Text>
             </View>
             <Image
-            source={require('../../assets/images/weather_icon/icon _umbrella insurance_.png')}
-            style={styles.cellIcon}
-          />
+              source={require('../../../assets/images/weather_icon/sunriseandset.png')}
+              style={styles.cellIcon}
+            />
           </View>
           <View style={styles.separator} />
           <View style={styles.separatorCell}>
-            <Text style={styles.cellValue}>74</Text>
-             <Image
-            source={require('../../assets/images/weather_icon/icon _umbrella insurance_.png')}
-            style={styles.cellIcon}
-          />
+            <Text style={styles.cellValue}>74%</Text>
+            <Image
+              source={require('../../../assets/images/weather_icon/umbrella.png')}
+              style={styles.cellIcon}
+            />
           </View>
           <View style={styles.separator} />
           <View style={styles.separatorCell}>
             <Text style={styles.cellValue}>5.56 m/s</Text>
             <Image
-            source={require('../../assets/images/weather_icon/icon _strong wind_.png')}
-            style={styles.cellIcon}
-          />
+              source={require('../../../assets/images/weather_icon/wind.png')}
+              style={styles.cellIcon}
+            />
           </View>
         </View>
       </LinearGradient>
 
-      <View style={styles.whiteRectangle} />
+      <Animated.View style={[styles.whiteRectangleContainer, { transform: [{ translateY: whiteRectangleTranslateY }] }]}>
+        <ScrollView
+          contentContainerStyle={styles.whiteRectangleContent}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: false }
+          )}
+          scrollEventThrottle={16} // Adjust for smooth scrolling
+        >
+          <View style={styles.whiteRectangle}>
+            <View style={styles.gridContainer}>
+              {Array.from({ length: 6 }).map((_, index) => (
+                <View
+                  key={index}
+                  style={[styles.roundedRectangle, { backgroundColor: rectangleColors[index] }]}
+                >
+                  <Text style={styles.rectangleText}>Box {index + 1}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        </ScrollView>
+      </Animated.View>
     </View>
   );
 }
@@ -79,14 +122,53 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     position: 'relative',
   },
-  whiteRectangle: {
-    width: width,
-    height: height * 0.6,
-    backgroundColor: 'white',
+  whiteRectangleContainer: {
     position: 'absolute',
-    top: height * 0.5,
+    bottom: 0,
+    width: width,
+    height: height * 0.45, // Fixed height
+    backgroundColor: 'white',
     borderTopLeftRadius: 40,
     borderTopRightRadius: 40,
+  },
+  whiteRectangleContent: {
+    flexGrow: 1,
+    justifyContent: 'flex-end', // Ensures content is aligned at the bottom
+  },
+  whiteRectangle: {
+    width: width,
+    height: '100%', // Fill the container height
+    backgroundColor: 'white',
+    borderTopLeftRadius: 40,
+    borderTopRightRadius: 40,
+    padding: 10,
+  },
+  gridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between', // Align items in a 3x2 grid
+    padding: 30,
+    marginTop: 20,
+  },
+  roundedRectangle: {
+    width: (width - 50) / 4, // Adjust width to make the boxes smaller
+    height: (width - 50) / 4, // Ensure square shape
+    borderRadius: 10,
+    marginBottom: 5, // Margin between rows
+    marginRight: 5, // Margin between columns
+    justifyContent: 'center',
+    alignItems: 'center',
+    
+    // Shadow properties
+    elevation: 5, // Elevation for Android
+    shadowColor: '#000', // Shadow color
+    shadowOffset: { width: 0, height: 3 }, // Shadow offset
+    shadowOpacity: 0.1, // Shadow opacity
+    shadowRadius: 5, // Shadow blur radius
+  },
+  rectangleText: {
+    fontSize: 12,
+    color: '#333',
   },
   temperatureText: {
     fontSize: 80,
@@ -188,8 +270,7 @@ const styles = StyleSheet.create({
     marginTop: 5, // Space between value and text
   },
   cellIcon: {
-    width: 20,
-    height: 20 ,
-    marginTop: 1,
+    width: 30,
+    height: 20,
   },
 });
